@@ -10,7 +10,7 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #define MAX 80
-#define PORT 9999
+#define PORT 8888
 #define SA struct sockaddr
 #define USERCOUNT 5
 
@@ -60,8 +60,7 @@ int server_setup(int port, int usercount){
     return server_socket;
 }
 
-int accept_client(int sockfd)
-{
+int accept_client(int sockfd){
 
     struct sockaddr_in clients;
     unsigned int addr_size = sizeof(struct sockaddr_in);
@@ -82,12 +81,12 @@ int user_login(int client_socket, struct logindb * logins)
 {
 
     int inflow, fg = 0, i;
-    char buffer[64] = {0}; // buffer to read in from client
+    char buffer[1024] = {0}; // buffer to read in from client
     char parsed[20] = {0}; // for command parsing
 
 
     //handle login
-    inflow = read(client_socket, buffer, 64);
+    inflow = read(client_socket, buffer, 1024);
 
     char *key;
 
@@ -97,16 +96,19 @@ int user_login(int client_socket, struct logindb * logins)
         for (int i = 5; i<20; i++)
             parsed[i-5] = buffer[i];
     }
-    else {printf("Please, authenticate by entering your username\n"); return 0;}
+    else {printf("Please, authenticate by entering your username\n"); send(client_socket, "Please, authenticate by entering your username\n", strlen("Please, authenticate by entering your username\n"), 0); return 0;}
 
 
     key = strtok(parsed, "\n");
 
+
     for ( i = 0; i < USERCOUNT; i++){
         if (!strcmp(logins[i].usrn, key)){
-            printf("User identified!\n"); fg = 1; break;}
+            printf("User identified!\n"); fg = 1;
+            send(client_socket, "User identified!\n", strlen("User identified!\n"), 0);
+            break;}
     }
-    if (!fg){printf("This username not found\nPlease set username in the db.txt file\n"); return 0;}
+    if (!fg){printf("This username not found\nPlease set username in the db.txt file\n"); send(client_socket, "This username not found\nPlease set username in the db.txt file\n", strlen("This username not found\nPlease set username in the db.txt file\n"), 0); return 0;}
 
     // handle password
     inflow = read(client_socket, buffer, 64);
@@ -119,15 +121,18 @@ int user_login(int client_socket, struct logindb * logins)
             parsed[j-5] = buffer[j];
         }
     }
-    else {printf("'PASS' command not received!\nAuthentication failed, please try again!\n"); return 0;}
-
+    else {printf("'PASS' command not received!\nAuthentication failed, please try again!\n"); send(client_socket, "'PASS' command not received!\nAuthentication failed, please try again!\n", strlen("'PASS' command not received!\nAuthentication failed, please try again!\n"), 0); return 0;}
+    //send(client_socket, "505", strlen("505"), 0);
 
     key = strtok(parsed, "\n");
 
-   if(!strcmp(logins[i].pass, key)){
+    if(!strcmp(logins[i].pass, key)){
             printf("Password accepted!\n");
+            char wel_usr[64];
+            sprintf(wel_usr,"Authentication complete! Welcome %s\n", logins[i].usrn);
+            send(client_socket, wel_usr,strlen(wel_usr), 0);
             return 1;}
-    else printf("Authentication failed, try again!\n");
+    else {printf("Authentication failed, try again!\n"); send(client_socket, "Authentication failed, try again!\n", strlen("Authentication failed, try again!\n"), 0);}
 
     return 0;
 }
@@ -176,8 +181,7 @@ void echo(int client_socket) {
 
     //handle login
     read(client_socket, buffer, 64);
-
-    printf("%s\n", buffer);
+    send(client_socket, buffer, strlen(buffer), 0);
 
     return;
 }
@@ -201,12 +205,6 @@ int main() {
     FD_ZERO(&sockets);
     FD_ZERO(&check_sockets);
     FD_SET(sockfd, &sockets);
-
-
-
-    char log[] = "Please, authenticate";
-    char suc[] = "Authentification complete!";
-
 
     int k = 0; // creating a boolean array like [0, 0, 0, 1], and treat 0 as unidentified, and 1 as identified users
     int auth[FD_SETSIZE] = {0};
@@ -235,32 +233,12 @@ int main() {
                 }
                 else
                 {
-                    //k = handle_connection(i, logins);
 
-                        //send(i, log, strlen(log), 0);
                     if (!auth[i]){
                         auth[i] = user_login(i, logins);}
 
                     else echo(i);
-                    //auth[i] = handle_connection(i, logins); // add a flag "user authentified", return the flag
-                    // } else {
-                    //     send(i, log, strlen(suc), 0);
-                    //     printf("USER ALL SET");
 
-                    //     char buf[64] = {0}; // buffer to read in from client
-
-                    //     read(i, buf, 64);
-                    //     printf("%s", buf);
-                    // }
-                    // handle the connection requests
-                    //k = handle_connection(i, logins); // add a flag "user authentified", return the flag
-                    //printf("%d\n", i);
-
-
-
-                    // TODO catch QUIT to drop client from reading him
-                    //FD_CLR (i, &sockets); // use this to drop a client from the listening list
-                    //printf("finished handling\n");
                 }
             }
         }

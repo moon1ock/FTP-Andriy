@@ -11,7 +11,7 @@
 #include <sys/types.h>
 #include <stdlib.h> /* for socket, connect, send, and recv */
 #define MAX 80
-#define PORT 9999
+#define PORT 8888
 #define SA struct sockaddr
 
 int setup_connection(int sockfd)
@@ -47,10 +47,19 @@ int setup_connection(int sockfd)
     return sockfd;
 }
 
-int client_login(a) {
+int client_login(int sockfd) {
+
+    printf(">> ");
+    char buffer[1024] = {0};
+    // translate the commands into numbers
+    char str[1024];
+    fgets(str, 1024, stdin);
 
 
+    send(sockfd, str, strlen(str), 0);
 
+    read(sockfd, buffer, 1024);
+    printf("%s", buffer);
     return 0;
 }
 
@@ -58,7 +67,7 @@ int client_login(a) {
 
 int main()
 {
-    int sockfd;
+    int sockfd, authorized = 0;
 
     sockfd = setup_connection(sockfd);
 
@@ -67,22 +76,9 @@ int main()
 
     for (;;)
     {
-        // char buf[64] = {0}; // buffer to read in from client
-        // read(sockfd, buf, 64);
-        // printf("%s\n", buf);
-        printf(">> ");
-        char buffer[1024] = {0};
-        // translate the commands into numbers
-        char str[1024];
-        fgets(str, 1024, stdin);
-        send(sockfd, str, strlen(str), 0);
 
-
-
-        // // create flags for function calls, and then go
-        // char buf[64] = {0}; // buffer to read in from client
-        // read(sockfd, buf, 64);
-        // printf("%s\n", buf);
+        while(!authorized)
+            authorized = client_login(sockfd);
 
     }
     return EXIT_SUCCESS;
