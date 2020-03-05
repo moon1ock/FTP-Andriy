@@ -1,8 +1,15 @@
 #include <netdb.h>
 #include <stdio.h> /* for printf and fprintf */
-#include <stdlib.h> /* for atoi */
 #include <string.h> /* for memset */
-#include <sys/socket.h> /* for socket, connect, send, and recv */
+#include <stdio.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/time.h>
+#include <stdio.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <stdlib.h> /* for socket, connect, send, and recv */
 #define MAX 80
 #define PORT 8080
 #define SA struct sockaddr
@@ -25,7 +32,7 @@ int main()
 
     // assign IP, PORT
     servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = inet_addr("vtop.0.0.1");
+    servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
     servaddr.sin_port = htons(PORT);
 
     // connect the client socket to server socket
@@ -36,12 +43,15 @@ int main()
     else
         printf("connected to the server..\n");
 
-    // function to send an echo and recieve a reply
-    //sendEcho(sockfd);
 
-    // function for chat
-//    chat(sockfd);
-
-    // close the socket
-  //  close(sockfd);
+    for(;;){
+    char buffer[1024] = {0};
+    char str[1024];
+    fgets(str, 1024, stdin);
+    send(sockfd , str , strlen(str) , 0 );
+    //printf("fuck message sent\n");
+    //int valread = read( sockfd, buffer, 1024);
+    //printf("%s\n",buffer );
+    }
+    return EXIT_SUCCESS;
 }
