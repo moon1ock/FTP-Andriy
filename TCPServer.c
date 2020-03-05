@@ -27,7 +27,7 @@ int main()
 
     // assign IP, PORT
     servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    servaddr.sin_addr.s_addr = htonl(INADDR_ANY); // htonl deals with the data formats, big/lil endian, INADDR_ANY just picks 0.0.0.0 as the adderss to connect to
     servaddr.sin_port = htons(PORT);
 
     // Binding newly created socket to given IP and verification
@@ -60,8 +60,8 @@ int main()
     //recvEcho(connfd);
 
     // Function for chatting between client and server
-    chat(connfd);
+    //chat(connfd);
 
     // After chatting close the socket
-    close(sockfd);
+    //close(sockfd);
 }
