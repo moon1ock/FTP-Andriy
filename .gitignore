@@ -27,3 +27,6 @@ a.out
 *.jar
 *.rar
 
+
+client
+server

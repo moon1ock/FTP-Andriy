@@ -167,25 +167,6 @@ void getusers(struct logindb * logins){
 
 // you can send command / filesize to parse easier
 
-
-
-void echo(int client_socket) {
-
-
-    char buffer[64] = {0}; // buffer to read in from client
-
-    //handle login
-    read(client_socket, buffer, 64);
-
-    printf("%s\n", buffer);
-
-    return;
-}
-
-
-
-
-
 int main() {
 
     struct logindb logins[USERCOUNT]; //reading <up to USERCOUNT> users into the login-database
@@ -239,9 +220,10 @@ int main() {
 
                         //send(i, log, strlen(log), 0);
                     if (!auth[i]){
+                        printf("user unidentified yet");\
                         auth[i] = user_login(i, logins);}
+                    else printf("logined success");
 
-                    else echo(i);
                     //auth[i] = handle_connection(i, logins); // add a flag "user authentified", return the flag
                     // } else {
                     //     send(i, log, strlen(suc), 0);
