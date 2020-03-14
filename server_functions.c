@@ -1,4 +1,4 @@
-
+#include "server_functions.h"
 #include <stdio.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -10,7 +10,6 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <stdlib.h>
-#include <limits.h>
 #define MAX 80
 #define PORT 9999
 #define SA struct sockaddr
@@ -29,7 +28,8 @@ int server_setup(int port, int usercount){
     struct sockaddr_in servaddr;
 
     server_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (server_socket == -1){
+    if (server_socket == -1)
+    {
         printf("Socket creation failed...\n");
         exit(EXIT_FAILURE);
     }
@@ -170,110 +170,18 @@ void getusers(struct logindb * logins){
 }
 
 
-void echo(int client_socket, char *buffer) {
+// you can send command / filesize to parse easier
 
 
-    // char buffer[64] = {0}; // buffer to read in from client
 
-    // //handle login
-    // read(client_socket, buffer, 64);
+void echo(int client_socket) {
 
+
+    char buffer[64] = {0}; // buffer to read in from client
+
+    //handle login
+    read(client_socket, buffer, 64);
     send(client_socket, buffer, strlen(buffer), 0);
 
     return;
-}
-
-void getpwd(int client_socket) {
-    char buffer[64] = {0};
-
-
-
-
-    send(client_socket, buffer, strlen(buffer), 0);
-
-    return;
-}
-
-
-int funcall(int client_socket, char *buffer) {
-
-
-
-    return 0;
-}
-
-
-
-int main() {
-
-    struct logindb logins[USERCOUNT]; //reading <up to USERCOUNT> users into the login-database
-    getusers(logins);
-
-    int sockfd = server_setup(PORT, USERCOUNT);
-
-    fd_set sockets, check_sockets;
-
-    // TODO: deal with the largest FDSETSIZE and check only the filled connections,
-    // as opposed to all of them (1024) for that matter
-
-    FD_ZERO(&sockets);
-    FD_ZERO(&check_sockets);
-    FD_SET(sockfd, &sockets);
-
-    int query = 0;
-    int auth[FD_SETSIZE] = {0}; // creating a boolean array like [0, 0, 0, 1], and treat 0 as unidentified, and 1 as identified users
-
-    for (;;)
-    {
-        // copy sockets because select is destructive
-        check_sockets = sockets;
-
-        if (select(FD_SETSIZE, &check_sockets, NULL, NULL, NULL) < 0)
-        {
-            printf("select error\n");
-            return EXIT_FAILURE;
-        }
-
-        for (int i = 0; i < FD_SETSIZE; i++)
-        {
-            if (FD_ISSET(i, &check_sockets))
-            {
-                if (i == sockfd)
-                {
-                    //a new upcomming connection
-                    printf("adding a new connection\n");
-                    int client_s = accept_client(sockfd);
-                    FD_SET(client_s, &sockets);
-                }
-                else
-                {
-                    // force the authentification
-                    if (!auth[i]){
-                        auth[i] = user_login(i, logins);}
-
-                    else{
-
-                        // get the client query, and process it
-                        char buffer[64] = {0};
-                        read(i, buffer, 64);
-
-                        query = funcall(i, buffer);
-
-                        switch(query){
-                            case 1:
-                                break;
-                            case 2:
-                                break;
-                            default:
-                               echo(i, buffer);
-                        }
-                    }
-
-                }
-            }
-        }
-
-    }
-
-    return EXIT_SUCCESS;
 }

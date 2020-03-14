@@ -1,4 +1,4 @@
-1.1 FTP commands
+### FTP commands
 FTP RFC 959 details a large number of commands that the FTP protocol, in this project we are only going to implement a couple of these commands. Below is a list of all the required commands that you need to implement.
 USER username with this command the client gets to identify which user is trying to login to the FTP server. This is mainly used for authentication, since there might be different access controls specified for each user.
 PASS password once the client issues a USER command to the server and gets the ”331 Username OK, password required” status code from the server. The client needs to authen- ticate with the user password by issuing a PASS command followed by the user password.

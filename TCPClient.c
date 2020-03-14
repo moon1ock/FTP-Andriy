@@ -11,7 +11,7 @@
 #include <sys/types.h>
 #include <stdlib.h> /* for socket, connect, send, and recv */
 #define MAX 80
-#define PORT 8888
+#define PORT 9999
 #define SA struct sockaddr
 
 int setup_connection(int sockfd)
@@ -61,6 +61,7 @@ int client_login(int sockfd) {
     read(sockfd, buffer, 1024);
     printf("%s", buffer);
     return 0;
+
 }
 
 
@@ -70,9 +71,6 @@ int main()
     int sockfd, authorized = 0;
 
     sockfd = setup_connection(sockfd);
-
-
-
 
     for (;;)
     {
