@@ -1,4 +1,4 @@
-  
+
 # Don't track content of these folders
 .codethatlovedup/
 .vscode/
@@ -30,3 +30,4 @@ a.out
 
 client
 server
+clientc
