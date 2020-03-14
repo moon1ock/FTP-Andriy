@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #define MAX 80
-#define PORT 9999
+#define PORT 8888
 #define SA struct sockaddr
 #define USERCOUNT 5
 
@@ -91,12 +91,12 @@ int user_login(int client_socket, struct logindb * logins) {
     char *key;
     if (buffer[4] == ' ')
         key = strtok(buffer, " ");
-    else {printf("Please, authenticate by entering your username\n"); send(client_socket, "Please, authenticate by entering your username\n", strlen("Please, authenticate by entering your username\n"), 0); return 0;}
+    else {printf("user is misusing the USER command\n"); send(client_socket, "Please, authenticate by entering your username\n", strlen("Please, authenticate by entering your username\n"), 0); return 0;}
 
     if (!strcmp(key, "USER")){
         for (int i = 5; i < 64; i++)
             parsed[i-5] = buffer[i];}
-    else {printf("Please, authenticate by entering your username\n"); send(client_socket, "Please, authenticate by entering your username\n", strlen("Please, authenticate by entering your username\n"), 0); return 0;}
+    else {printf("user trying to authenticate\n"); send(client_socket, "Please, authenticate by entering your username\n", strlen("Please, authenticate by entering your username\n"), 0); return 0;}
 
 
     key = strtok(parsed, "\n");
@@ -108,12 +108,14 @@ int user_login(int client_socket, struct logindb * logins) {
             send(client_socket, "User identified!\n", strlen("User identified!\n"), 0);
             break;}
     }
-    if (!fg){printf("This username not found\nPlease set username in the db.txt file\n"); send(client_socket, "This username not found\nPlease set username in the db.txt file\n", strlen("This username not found\nPlease set username in the db.txt file\n"), 0); return 0;}
+    if (!fg){printf("user used a wrong username\n"); send(client_socket, "This username not found\nPlease set username in the db.txt file\n", strlen("This username not found\nPlease set username in the db.txt file\n"), 0); return 0;}
 
     // handle password
     inflow = read(client_socket, buffer, 64);
-
-    key = strtok(buffer, " ");
+    if (buffer[4] == ' ')
+        key = strtok(buffer, " ");
+     else {printf("user misused the PASS command\n"); send(client_socket, "'PASS' command used incorrectly!\nAuthentication failed, please try again!\n", strlen("'PASS' command used incorrectly!\nAuthentication failed, please try again!\n"), 0); return 0;}
+    //key = strtok(buffer, " ");
 
     if (!strcmp(key, "PASS")){
         //printf("PASS command received!\n");
@@ -121,18 +123,18 @@ int user_login(int client_socket, struct logindb * logins) {
             parsed[j-5] = buffer[j];
         }
     }
-    else {printf("'PASS' command not received!\nAuthentication failed, please try again!\n"); send(client_socket, "'PASS' command not received!\nAuthentication failed, please try again!\n", strlen("'PASS' command not received!\nAuthentication failed, please try again!\n"), 0); return 0;}
+    else {printf("user did not send the PASS command\n"); send(client_socket, "'PASS' command not received!\nAuthentication failed, please try again!\n", strlen("'PASS' command not received!\nAuthentication failed, please try again!\n"), 0); return 0;}
     //send(client_socket, "505", strlen("505"), 0);
 
     key = strtok(parsed, "\n");
 
     if(!strcmp(logins[i].pass, key)){
-            printf("Password accepted!\n");
+            printf("user authentified successfully!\n");
             char wel_usr[64];
             sprintf(wel_usr,"Authentication complete! Welcome %s\n", logins[i].usrn);
             send(client_socket, wel_usr,strlen(wel_usr), 0);
             return 1;}
-    else {printf("Authentication failed, try again!\n"); send(client_socket, "Authentication failed, try again!\n", strlen("Authentication failed, try again!\n"), 0);}
+    else {printf("user failed to authenticate\n"); send(client_socket, "Authentication failed, try again!\n", strlen("Authentication failed, try again!\n"), 0);}
 
     return 0;
 }
@@ -172,32 +174,40 @@ void getusers(struct logindb * logins){
 
 void echo(int client_socket, char *buffer) {
 
-
-    // char buffer[64] = {0}; // buffer to read in from client
-
-    // //handle login
-    // read(client_socket, buffer, 64);
-
     send(client_socket, buffer, strlen(buffer), 0);
 
     return;
 }
 
 void getpwd(int client_socket) {
+    /*simple function to return the current directory of the server*/
     char buffer[64] = {0};
-
-
-
-
-    send(client_socket, buffer, strlen(buffer), 0);
+   if (getcwd(buffer, sizeof(buffer)) != NULL){
+       strcat(buffer, "\n");
+       send(client_socket, buffer, strlen(buffer), 0);}
+   else{
+       strcpy(buffer,"getcwd() error\n" );
+       send(client_socket, buffer, strlen(buffer), 0);}
 
     return;
 }
 
 
-int funcall(int client_socket, char *buffer) {
+int funcall(char *buf) {
 
-
+    char buffer[64];// create a copy bc strtok is destructive
+    strcpy(buffer, buf);
+    char *key;
+    if (strstr(buffer, " ") ){
+        key = strtok(buffer, " ");
+        printf("there is a space in the user inquiry\n");
+    }
+    else if(buffer[0]!='\n'){
+        key = strtok(buffer, "\n");
+        printf("no space\n");
+        if(!strcmp(key, "PWD")){
+            printf("PWD command received!\n"); return 1;}
+    }
 
     return 0;
 }
@@ -257,12 +267,15 @@ int main() {
                         char buffer[64] = {0};
                         read(i, buffer, 64);
 
-                        query = funcall(i, buffer);
+                        query = funcall(buffer);
 
                         switch(query){
-                            case 1:
+                            case 1: //PWD server command
+                                getpwd(i);
                                 break;
-                            case 2:
+                            case 2: // CD server command
+                                break;
+                            case 3: // LS server command
                                 break;
                             default:
                                echo(i, buffer);
