@@ -2,4 +2,4 @@
 animated umbrella
 
 
-ftp protocol
+ftp implementation using the tcp protocol
