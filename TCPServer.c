@@ -103,7 +103,7 @@ int user_login(int client_socket, struct logindb *logins, fd_set *sockets)
     else
     {
         printf("user not authenticated!\n");
-        send(client_socket, "Please, authenticate by entering your username\n", strlen("Please, authenticate by entering your username\n"), 0);
+        send(client_socket, "\033[1;31mPlease, authenticate by entering your username\033[0m\n", strlen("\033[1;31mPlease, authenticate by entering your username\033[0m\n"), 0);
         return 0;
     }
 
@@ -115,7 +115,7 @@ int user_login(int client_socket, struct logindb *logins, fd_set *sockets)
     else
     {
         printf("user trying to authenticate\n");
-        send(client_socket, "Please, authenticate by entering your username\n", strlen("Please, authenticate by entering your username\n"), 0);
+        send(client_socket, "\033[1;31mPlease, authenticate by entering your username\033[0m\n", strlen("\033[1;31mPlease, authenticate by entering your username\033[0m\n"), 0);
         return 0;
     }
 
@@ -127,7 +127,7 @@ int user_login(int client_socket, struct logindb *logins, fd_set *sockets)
         {
             printf("User identified!\n");
             fg = 1;
-            send(client_socket, "User identified!\n", strlen("User identified!\n"), 0);
+            send(client_socket, "\033[1mUser identified!\033[0m\n", strlen("\033[1mUser identified!\033[0m\n"), 0);
             break;
         }
     }
@@ -423,7 +423,7 @@ int main()
                         case 6: // PUT command
                             break;
                         default:
-                            echo(i, "Invalid FTP command!\n");
+                            echo(i, "\033[1;31mInvalid FTP command!\033[0m\n");
                         }
                     }
                 }
