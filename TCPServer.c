@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <string.h>
+#include <dirent.h>
 #include <sys/time.h>
 #include <stdio.h>
 #include <sys/socket.h>
@@ -131,7 +132,7 @@ int user_login(int client_socket, struct logindb * logins) {
     if(!strcmp(logins[i].pass, key)){
             printf("user authentified successfully!\n");
             char wel_usr[64];
-            sprintf(wel_usr,"Authentication complete! Welcome %s\n", logins[i].usrn);
+            sprintf(wel_usr,"Authentication complete! Welcome, %s!\n", logins[i].usrn);
             send(client_socket, wel_usr,strlen(wel_usr), 0);
             return 1;}
     else {printf("user failed to authenticate\n"); send(client_socket, "Authentication failed, try again!\n", strlen("Authentication failed, try again!\n"), 0);}
@@ -171,7 +172,6 @@ void getusers(struct logindb * logins){
     return;
 }
 
-
 void echo(int client_socket, char *buffer) {
 
     send(client_socket, buffer, strlen(buffer), 0);
@@ -186,12 +186,35 @@ void getpwd(int client_socket) {
        strcat(buffer, "\n");
        send(client_socket, buffer, strlen(buffer), 0);}
    else{
-       strcpy(buffer,"getcwd() error\n" );
+       strcpy(buffer,"[-] getcwd() error\n" );
        send(client_socket, buffer, strlen(buffer), 0);}
 
     return;
 }
 
+
+void getls(int client_socket) {
+    /*function that lists the current files in the server directory*/
+    DIR *d;
+    struct dirent *dir;
+    char buffer[1024] = {0};
+    char tmpbuf[64] = {0};
+    d = opendir(".");
+
+    if (d){
+        while ((dir = readdir(d)) != NULL)
+        {
+            sprintf(tmpbuf, "%s\n", dir->d_name);
+            strcat(buffer, tmpbuf);
+        }
+        closedir(d);
+    }
+    else{sprintf(buffer, "[-] permission or directory error (i doubt it will ever happen though)!!!\n");}
+
+   send(client_socket, buffer, strlen(buffer), 0);
+
+    return;
+}
 
 int funcall(char *buf) {
 
@@ -204,9 +227,10 @@ int funcall(char *buf) {
     }
     else if(buffer[0]!='\n'){
         key = strtok(buffer, "\n");
-        printf("no space\n");
         if(!strcmp(key, "PWD")){
             printf("PWD command received!\n"); return 1;}
+        else if(!strcmp(key, "LS")){
+            printf("LS command received!\n"); return 3;}
     }
 
     return 0;
@@ -238,8 +262,7 @@ int main() {
         // copy sockets because select is destructive
         check_sockets = sockets;
 
-        if (select(FD_SETSIZE, &check_sockets, NULL, NULL, NULL) < 0)
-        {
+        if (select(FD_SETSIZE, &check_sockets, NULL, NULL, NULL) < 0) {
             printf("select error\n");
             return EXIT_FAILURE;
         }
@@ -276,6 +299,9 @@ int main() {
                             case 2: // CD server command
                                 break;
                             case 3: // LS server command
+                                getls(i);
+                                break;
+                            case 4: // QUIT command
                                 break;
                             default:
                                echo(i, buffer);
