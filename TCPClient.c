@@ -13,6 +13,7 @@
 #define MAX 80
 #define PORT 9999
 #define SA struct sockaddr
+int sig_handl_sock;
 
 int setup_connection(int sockfd)
 {
@@ -56,11 +57,32 @@ int client_login(int sockfd) {
     fgets(str, 1024, stdin);
 
 
+
     send(sockfd, str, strlen(str), 0);
 
+    if(!strcmp(str, "QUIT\n"))
+        exit(0);
+
     read(sockfd, buffer, 1024);
-    printf("%s", buffer);
-    return 0;
+
+    if(buffer[0] == '5'){
+        printf("%s", buffer);
+        return 1;}
+    else{ printf("%s", buffer);
+        return 0;}
+
+}
+
+
+void sigintHandler(int sig_num)
+{
+    /* Reset handler to catch SIGINT next time.
+       Refer http://en.cppreference.com/w/c/program/signal */
+    signal(SIGINT, sigintHandler);
+    // printf("\n Cannot be terminated using Ctrl+C \n");
+    // fflush(stdout);
+    send(sig_handl_sock, "QUIT", strlen("QUIT"), 0);
+    exit(0);
 
 }
 
@@ -71,12 +93,16 @@ int main()
     int sockfd, authorized = 0;
 
     sockfd = setup_connection(sockfd);
+    sig_handl_sock = sockfd;
+    signal(SIGINT, sigintHandler); // catch CTRL+C
+
+
+    while(!authorized)
+            authorized = client_login(sockfd); // loop to minimize the checks for user auth
 
     for (;;)
     {
-
-        while(!authorized)
-            authorized = client_login(sockfd);
+        client_login(sockfd);
 
     }
     return EXIT_SUCCESS;
