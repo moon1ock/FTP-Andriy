@@ -4,6 +4,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <ctype.h>
 #include <string.h>
 #include <dirent.h>
 #include <sys/time.h>
@@ -12,8 +13,7 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <limits.h>
-#define MAX 80
-#define PORT 8888
+#define PORT 9999
 #define SA struct sockaddr
 #define USERCOUNT 5
 
@@ -90,9 +90,9 @@ int user_login(int client_socket, struct logindb * logins) {
     inflow = read(client_socket, buffer, 1024);
 
     char *key;
-    if (buffer[4] == ' ')
+    if (buffer[4] == ' ' && isalpha(buffer[5]))
         key = strtok(buffer, " ");
-    else {printf("user is misusing the USER command\n"); send(client_socket, "Please, authenticate by entering your username\n", strlen("Please, authenticate by entering your username\n"), 0); return 0;}
+    else {printf("user not authenticated!\n"); send(client_socket, "Please, authenticate by entering your username\n", strlen("Please, authenticate by entering your username\n"), 0); return 0;}
 
     if (!strcmp(key, "USER")){
         for (int i = 5; i < 64; i++)
@@ -216,6 +216,29 @@ void getls(int client_socket) {
     return;
 }
 
+
+void changedir(int client_socket, char *buffer) {
+    /*function that changes the current server directory*/
+
+    char *key;
+    char buf[64]; // store the path
+    for (int i = 3; i < 64; i++)
+            buf[i-3] = buffer[i];
+
+
+    key = strtok(buf, "\n");
+
+    if(chdir(buf) == 0)
+        getpwd(client_socket);
+    else
+        echo(client_socket, "CD error!\n");
+
+    return;
+}
+
+
+
+
 int funcall(char *buf) {
 
     char buffer[64];// create a copy bc strtok is destructive
@@ -224,6 +247,8 @@ int funcall(char *buf) {
     if (strstr(buffer, " ") ){
         key = strtok(buffer, " ");
         printf("there is a space in the user inquiry\n");
+        if(!strcmp(key, "CD")){
+            printf("CD command received!\n"); return 2;}
     }
     else if(buffer[0]!='\n'){
         key = strtok(buffer, "\n");
@@ -297,6 +322,7 @@ int main() {
                                 getpwd(i);
                                 break;
                             case 2: // CD server command
+                                changedir(i, buffer);
                                 break;
                             case 3: // LS server command
                                 getls(i);
