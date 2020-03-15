@@ -86,12 +86,12 @@ int accept_client(int sockfd)
 int user_login(int client_socket, struct logindb *logins, fd_set *sockets)
 {
 
-    int inflow, fg = 0, i;
+    int fg = 0, i;
     char buffer[1024] = {0}; // buffer to read in from client
     char parsed[1024] = {0};   // for command parsing
 
     //handle login
-    inflow = read(client_socket, buffer, 1024);
+    read(client_socket, buffer, 1024);
 
     if(!strcmp(buffer, "QUIT") || !strcmp(buffer, "QUIT\n")){ // drop the client on quit
         printf("dropping the client %d\n", client_socket);
@@ -139,9 +139,17 @@ int user_login(int client_socket, struct logindb *logins, fd_set *sockets)
         send(client_socket, "This username not found\nPlease set username in the db.txt file\n", strlen("This username not found\nPlease set username in the db.txt file\n"), 0);
         return 0;
     }
-
+    memset(buffer,0,sizeof(buffer));
     // handle password
-    inflow = read(client_socket, buffer, 64);
+    read(client_socket, buffer, 1024);
+
+    if(!strcmp(buffer, "QUIT") || !strcmp(buffer, "QUIT\n")){ // drop the client on quit
+        printf("dropping the client %d\n", client_socket);
+        FD_CLR(client_socket, sockets);
+        return 0;}
+
+
+
     if (buffer[4] == ' ')
         key = strtok(buffer, " ");
     else

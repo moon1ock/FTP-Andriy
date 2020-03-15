@@ -60,8 +60,8 @@ int client_login(int sockfd) {
 
     send(sockfd, str, strlen(str), 0);
 
-    if(!strcmp(str, "QUIT\n"))
-        exit(0);
+    if(!strcmp(str, "QUIT\n")){
+        exit(0);}
 
     read(sockfd, buffer, 1024);
 
