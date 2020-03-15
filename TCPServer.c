@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -25,8 +24,7 @@ struct logindb
     char pass[20];
 };
 
-int server_setup(int port, int usercount)
-{
+int server_setup(int port, int usercount){
 
     int server_socket, client_socket;
     struct sockaddr_in servaddr;
@@ -280,7 +278,7 @@ void getls(int client_socket)
     }
     else
     {
-        sprintf(buffer, "[-] permission or directory error (i doubt it will ever happen though)!!!\n");
+        sprintf(buffer, "[-] permission or directory error!\n");
     }
 
     send(client_socket, buffer, strlen(buffer), 0);
