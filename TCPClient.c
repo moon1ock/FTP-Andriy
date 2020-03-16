@@ -282,36 +282,27 @@ void evoke_put(int sockfd, char *buf){
 
 
     // transfer the file
-
-
     memset(buffer,0,sizeof(buffer));
-    char cc;
+    int cc;
     int i = 0;
     while( ( cc = fgetc(fp) ) != EOF ){
         buffer[i++] = cc;
-        if(i == 1025){ // send the 1024 processed bits to the server, reset the cnt and clear the buffer
+        if(i == 1023){ // send the 1024 processed bits to the server, reset the cnt and clear the buffer
+            buffer[i] = '\0';
             send(new_sockfd, buffer, strlen(buffer), 0);
-            printf("sent batch...\n");
             memset(ch,0,sizeof(ch));
             read(new_sockfd, ch, 1024);
             //printf("ch: %s\n", ch);
-
-            // if (strcmp(ch, "+\n")){ // receive confirm
-            //     printf("corrupted confirmation\n");
-            //     exit(1);
-            // }
             i = 0;
             memset(buffer,0,sizeof(buffer));
         }
     }
-
+    buffer[i++] = '\0'; // null character to terminate string
     send(new_sockfd, buffer, strlen(buffer), 0); // send the last batch
     printf("sending finished\n");
 
     memset(ch,0,sizeof(ch));
     read(new_sockfd, ch, 1024);
-
-    //printf("ch: %s\n", ch);
     send(new_sockfd, "EOF\n", strlen("EOF\n"), 0); // indicate the end of file here
 
     // ********************************** //

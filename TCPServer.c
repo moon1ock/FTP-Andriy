@@ -426,7 +426,7 @@ void doput(int client, char *buffer){
     fp=fopen(name,"a");
 
     if (fp == NULL){
-        printf("ERROR WRITING TO A FILE!");
+        printf("ERROR WRITING TO A FILE!\n");
         exit(1);
     }
 
@@ -439,19 +439,14 @@ void doput(int client, char *buffer){
         send(data, "1", strlen("1"), 0); // send confirmation
         memset(ch,0,sizeof(ch)); // clear buffer
         read(data, ch, 1024); // read again
-        //printf("ch: %s\n", ch);
     }
 
     fclose(fp);
-
-
-
-    close(new_sockfd);
     close(data);
+    close(new_sockfd);
 
 
 }
-
 
 
 
