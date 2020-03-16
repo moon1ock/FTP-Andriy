@@ -213,11 +213,12 @@ int check(int sockfd){
 void evoke_put(int sockfd, char *buf){
 
     char buffer[1024] = {0}; // create a copy bc strtok is destructive
-
+    char name[1024] = {0};
     for(int i = 4; i<sizeof(buffer); i++){
         buffer[i-4] = buf[i];
     }
     char *key = strtok(buffer, "\n"); // filename
+    strcpy(name, key);
     if (key == NULL || strstr(key, " ") || strstr(key, "\t")){
         printf("Incorrect filename!\n");
         return;}
@@ -260,7 +261,31 @@ void evoke_put(int sockfd, char *buf){
     int new_sockfd;
     new_sockfd = setup_connection(new_sockfd, DTPORT);
 
-    send(new_sockfd, "new TCP connection setup!\n", strlen("new TCP connection setup!\n"), 0);
+    send(new_sockfd, "new TCP connection setup!", strlen("new TCP connection setup!"), 0);
+    memset(ch,0,sizeof(ch));
+    read(new_sockfd, ch, 1024); // confirmation of TCP setup
+    printf("%s\n", ch);
+
+    // let's send the filename
+    memset(buffer,0,sizeof(buffer));
+    send(new_sockfd, name, strlen(name), 0);
+    // filename sent
+
+    // check if filename exists
+    memset(ch,0,sizeof(ch));
+    read(new_sockfd, ch, 1024);
+    printf("%s\n", ch);
+    if(!strcmp(ch, "Uploading the file...")){
+        printf("SUCCESS!\n");
+    }
+
+
+
+
+
+
+
+
 
 
     //read(new_sockfd, ch, 1);

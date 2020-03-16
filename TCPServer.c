@@ -389,13 +389,42 @@ void doput(int client, char *buffer){
 
     char ch[1024] = {0};
 
+    read(data, ch, 1024); // new tcp connection setup
+
+    printf("%s\n", ch);
+    send(data, "TCP connection for file transfer established!", strlen("TCP connection for file transfer established!"), 0);
+
+    // let's get the filename
+    memset(ch,0,sizeof(ch));
     read(data, ch, 1024);
+    char name[1024] = {0};
+    strcpy(name, ch);
+    //printf("filename: %s\n", ch);
+    // filename received here
 
-    printf("%s", ch);
+    FILE *fp;
+    long int size=0;
+
+    fp=fopen(name,"r");
+
+    if(fp != NULL){
+        printf("File with such name already exists in this directory! Cannot receive!\n");
+        send(data, "File with such name already exists in this directory! Cannot receive!", strlen("File with such name already exists in this directory! Cannot receive!"), 0);
+        fclose(fp);
+        close(new_sockfd);
+        close(data);
+        return;
+    }
+    else {
+        printf("Downloading the file...\n");
+        send(data, "Uploading the file...", strlen("Uploading the file..."), 0);
+    }
 
 
 
 
+
+    fclose(fp);
 
     close(new_sockfd);
     close(data);
