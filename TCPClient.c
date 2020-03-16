@@ -239,7 +239,6 @@ void evoke_put(int sockfd, char *buf){
     // have tp figure out the connection stuff
 
 
-
     // creating a new TCP connection with a server!
 
     // ********************************* //
@@ -275,30 +274,45 @@ void evoke_put(int sockfd, char *buf){
     memset(ch,0,sizeof(ch));
     read(new_sockfd, ch, 1024);
     printf("%s\n", ch);
-    if(!strcmp(ch, "Uploading the file...")){
-        printf("SUCCESS!\n");
+    if(strcmp(ch, "Uploading the file...")){
+        close(new_sockfd);
+        fclose(fp);
+        return;
     }
 
 
+    // transfer the file
 
 
+    memset(buffer,0,sizeof(buffer));
+    char cc;
+    int i = 0;
+    while( ( cc = fgetc(fp) ) != EOF ){
+        buffer[i++] = cc;
+        if(i == 1025){ // send the 1024 processed bits to the server, reset the cnt and clear the buffer
+            send(new_sockfd, buffer, strlen(buffer), 0);
+            printf("sent batch...\n");
+            memset(ch,0,sizeof(ch));
+            read(new_sockfd, ch, 1024);
+            //printf("ch: %s\n", ch);
 
+            // if (strcmp(ch, "+\n")){ // receive confirm
+            //     printf("corrupted confirmation\n");
+            //     exit(1);
+            // }
+            i = 0;
+            memset(buffer,0,sizeof(buffer));
+        }
+    }
 
+    send(new_sockfd, buffer, strlen(buffer), 0); // send the last batch
+    printf("sending finished\n");
 
-    // //read(new_sockfd, ch, 1);
-    // close(new_sockfd);
-    // //printf("Closing the TCP connection \033[5m...\033[0m\n");
-    // //usleep(3000000); // need this timer to close socket properly
+    memset(ch,0,sizeof(ch));
+    read(new_sockfd, ch, 1024);
 
-
-
-
-
-
-    //read(new_sockfd, ch, 1);
-    close(new_sockfd);
-    //printf("Closing the TCP connection \033[5m...\033[0m\n");
-    //usleep(3000000); // need this timer to close socket properly
+    //printf("ch: %s\n", ch);
+    send(new_sockfd, "EOF\n", strlen("EOF\n"), 0); // indicate the end of file here
 
     // ********************************** //
 
@@ -307,17 +321,7 @@ void evoke_put(int sockfd, char *buf){
 
 
 
-
-    //send(new_c, "QUIT\n", strlen("QUIT\n"), 0);
-
-    // char ch;
-    // int i = 0;
-    // while( ( ch = fgetc(fp) ) != EOF ){
-    //     buffer[i++] = ch;
-    //     if(i == 1025){
-    //         //deal with it!
-    //     }
-    //     }
+    close(new_sockfd);
     fclose(fp);
 
 

@@ -155,7 +155,7 @@ int user_login(int client_socket, struct logindb *logins, fd_set *sockets)
 
 
 
-    if (buffer[4] == ' ')
+    if (buffer[4] == ' ' && isalpha(buffer[5]))
         key = strtok(buffer, " ");
     else
     {
@@ -419,12 +419,32 @@ void doput(int client, char *buffer){
         printf("Downloading the file...\n");
         send(data, "Uploading the file...", strlen("Uploading the file..."), 0);
     }
+    fclose(fp);
 
 
+    // **********RECEIVE THE FILE**********//
+    fp=fopen(name,"a");
+
+    if (fp == NULL){
+        printf("ERROR WRITING TO A FILE!");
+        exit(1);
+    }
 
 
+    memset(ch,0,sizeof(ch));
+    read(data, ch, 1024); // read the first batch
+    int cnt =1;
+    while (strcmp(ch, "EOF\n")){
+        fprintf(fp, "%s", ch); // append the first batch to the file
+        send(data, "1", strlen("1"), 0); // send confirmation
+        memset(ch,0,sizeof(ch)); // clear buffer
+        read(data, ch, 1024); // read again
+        //printf("ch: %s\n", ch);
+    }
 
     fclose(fp);
+
+
 
     close(new_sockfd);
     close(data);
