@@ -185,6 +185,39 @@ int transfer_funcall(int sockfd, char *buf){
     return 0;
 }
 
+void evoke_put(int sockfd, char *buf){
+
+    char buffer[1024] = {0}; // create a copy bc strtok is destructive
+
+    for(int i = 4; i<sizeof(buffer); i++){
+        buffer[i-4] = buf[i];
+    }
+    char *key = strtok(buffer, "\n");
+    if (key == NULL || strstr(key, " ") || strstr(key, "\t")){
+        printf("Incorrect filename!\n");
+        return;}
+
+    printf("%s\n", key);
+
+    FILE *fp;
+    long int size=0;
+
+    fp=fopen(key,"r");
+
+    if(fp == NULL){
+        printf("Cannot open the file to be sent out!!!\n");
+        return;
+    }
+
+
+    // create a char array 1024 in size (we can use buffer since we don't need it anymore
+    // iterate over the file, until EOF, if 1024 then send and restart the counter
+    // have tp figure out the connection stuff
+
+
+}
+
+
 
 void query_handler(int sockfd){
     printf(">> ");
@@ -214,6 +247,7 @@ void query_handler(int sockfd){
         switch (query){
             case 1: //PUT client command
                 printf("inside PUT cmd processing\n");
+                evoke_put(sockfd, str);
                 return;
             case 2: // GET client command
                 printf("inside GET cmd processing\n");
