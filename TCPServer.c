@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #define PORT 9999
-#define DTPORT 8888
+#define DTPORT 9998
 #define SA struct sockaddr
 #define USERCOUNT 5
 
@@ -116,7 +116,7 @@ int user_login(int client_socket, struct logindb *logins, fd_set *sockets)
 
     if (!strcmp(key, "USER"))
     {
-        for (int i = 5; i < 64; i++)
+        for (int i = 5; i < 1024; i++)
             parsed[i - 5] = buffer[i];
     }
     else
@@ -186,7 +186,7 @@ int user_login(int client_socket, struct logindb *logins, fd_set *sockets)
     if (!strcmp(logins[i].pass, key))
     {
         printf("user authentified successfully!\n");
-        char wel_usr[64];
+        char wel_usr[1024];
         sprintf(wel_usr, "505 Authentication complete! Welcome, %s!\n", logins[i].usrn);
         send(client_socket, wel_usr, strlen(wel_usr), 0);
         return 1;
@@ -250,7 +250,7 @@ void echo(int client_socket, char *buffer)
 void getpwd(int client_socket)
 {
     /*simple function to return the current directory of the server*/
-    char buffer[64] = {0};
+    char buffer[1024] = {0};
     if (getcwd(buffer, sizeof(buffer)) != NULL)
     {
         strcat(buffer, "\n");
@@ -271,7 +271,7 @@ void getls(int client_socket)
     DIR *d;
     struct dirent *dir;
     char buffer[1024] = {0};
-    char tmpbuf[64] = {0};
+    char tmpbuf[1024] = {0};
     d = opendir(".");
 
     if (d)
@@ -298,8 +298,8 @@ void changedir(int client_socket, char *buffer)
     /*function that changes the current server directory*/
 
     char *key;
-    char buf[64]; // store the path
-    for (int i = 3; i < 64; i++)
+    char buf[1024]; // store the path
+    for (int i = 3; i < 1024; i++)
         buf[i - 3] = buffer[i];
 
     key = strtok(buf, "\n");
@@ -314,7 +314,7 @@ void changedir(int client_socket, char *buffer)
 
 int funcall(char *buf)
 {
-    char buffer[64]; // create a copy bc strtok is destructive
+    char buffer[1024]; // create a copy bc strtok is destructive
     strcpy(buffer, buf);
     char *key;
     if (strstr(buffer, " "))
@@ -365,8 +365,8 @@ int funcall(char *buf)
 void doput(int client, char *buffer){
 
     char *key;
-    char buf[64]; // store the path
-    for (int i = 4; i < 64; i++)
+    char buf[1024]; // store the path
+    for (int i = 4; i < 1024; i++)
         buf[i - 4] = buffer[i];
 
     key = strtok(buf, "\n"); // name of the file to put
@@ -377,8 +377,8 @@ void doput(int client, char *buffer){
     int new_sockfd = server_setup(DTPORT, 5);
 
 
-    char str[64] = {0};
-    strcpy(str, "DATATRANSFER\n");
+    char str[8] = {0};
+    strcpy(str, "DATA\n");
     send(client, str, strlen(str), 0);
 
     printf("Sent data to client!\n");
@@ -387,9 +387,9 @@ void doput(int client, char *buffer){
 
     int data = accept_client(new_sockfd);
 
-    char ch[64] = {0};
+    char ch[1024] = {0};
 
-    read(data, ch, 64);
+    read(data, ch, 1024);
 
     printf("%s", ch);
 
@@ -459,8 +459,8 @@ int main()
                     {
 
                         // get the client query, and process it
-                        char buffer[64] = {0};
-                        read(i, buffer, 64);
+                        char buffer[1024] = {0};
+                        read(i, buffer, 1024);
 
                         query = funcall(buffer);
 

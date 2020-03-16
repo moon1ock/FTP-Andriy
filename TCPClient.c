@@ -14,7 +14,7 @@
 #include <limits.h>
 #define MAX 80
 #define PORT 9999
-#define DTPORT 8888 // port for a separate TCP connection for data transfer
+#define DTPORT 9998 // port for a separate TCP connection for data transfer
 #define SA struct sockaddr
 int sig_handl_sock;
 
@@ -113,7 +113,7 @@ int local_funcall(char *buf){
 
 void getpwd(){
     /*simple function to return the current directory of the server*/
-    char buffer[64] = {0};
+    char buffer[1024] = {0};
     if (getcwd(buffer, sizeof(buffer)) != NULL)
     {
         strcat(buffer, "\n");
@@ -133,7 +133,7 @@ void getls() {
     DIR *d;
     struct dirent *dir;
     char buffer[1024] = {0};
-    char tmpbuf[64] = {0};
+    char tmpbuf[1024] = {0};
     d = opendir(".");
 
     if (d)
@@ -190,6 +190,26 @@ int transfer_funcall(int sockfd, char *buf){
     return 0;
 }
 
+
+int check(int sockfd){
+
+    char ch[8] = {0};
+    int a;
+    fflush(stdin);
+    a = read(sockfd, ch, 8);
+    if(a < 1) {printf("server error, try again"); return 0;}
+
+    else {
+        char *k;
+        k = strtok(ch, "\n");
+        if(!strcmp(k, "DATA"))
+            return 1;
+        else return 0;
+    }
+
+}
+
+
 void evoke_put(int sockfd, char *buf){
 
     char buffer[1024] = {0}; // create a copy bc strtok is destructive
@@ -213,7 +233,6 @@ void evoke_put(int sockfd, char *buf){
     }
 
 
-
     // create a char array 1024 in size (we can use buffer since we don't need it anymore
     // iterate over the file, until EOF, if 1024 then send and restart the counter
     // have tp figure out the connection stuff
@@ -231,20 +250,18 @@ void evoke_put(int sockfd, char *buf){
 
     printf("%s", buffer);// PUT CMD init
 
-    char ch[64] = {0};
+    char ch[1024] = {0};
+    printf("Setting up a new TCP connection...\n");
+
+
+    int k = check(sockfd);
+    if (!k) {fclose(fp); return;}
+
     int new_sockfd;
+    new_sockfd = setup_connection(new_sockfd, DTPORT);
 
-    read(sockfd, ch, 64);
-    char *k;
-    k = strtok(ch, "\n");
-    if(!strcmp(k, "DATATRANSFER")){
-        new_sockfd = setup_connection(new_sockfd, DTPORT);}
-    else{printf("weird error\n"); return;}
+    send(new_sockfd, "new TCP connection setup!\n", strlen("new TCP connection setup!\n"), 0);
 
-
-    send(new_sockfd, "CONNECTION WITHIN CONNECTION\n", strlen("CONNECTION WITHIN CONNECTION\n"), 0);
-    printf("SENT!!!\n");
-    memset(ch,0,sizeof(ch));
 
     //read(new_sockfd, ch, 1);
     close(new_sockfd);
@@ -269,6 +286,7 @@ void evoke_put(int sockfd, char *buf){
     //         //deal with it!
     //     }
     //     }
+    fclose(fp);
 
 
 }
@@ -348,3 +366,4 @@ int main(){
     }
     return EXIT_SUCCESS;
 }
+
