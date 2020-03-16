@@ -69,8 +69,9 @@ int client_login(int sockfd)
     read(sockfd, buffer, 1024);
 
     if (buffer[0] == '5')
-    {
+    {   printf("\033[32;1m");
         printf("%s", buffer);
+        printf("\033[0m");
         return 1;
     }
     else
@@ -80,7 +81,7 @@ int client_login(int sockfd)
     }
 }
 
-int funcall(char *buf){
+int local_funcall(char *buf){
     char buffer[1024] = {0}; // create a copy bc strtok is destructive
 
     for(int i = 1; i<sizeof(buffer); i++){
@@ -122,8 +123,7 @@ void getpwd(){
     return;
 }
 
-void getls()
-{
+void getls() {
     /*function that lists the current files in the server directory*/
     DIR *d;
     struct dirent *dir;
@@ -163,9 +163,26 @@ void changedir(char *buffer){
     if (chdir(buf) == 0)
         getpwd();
     else
-        printf("CD error!\n");
+        printf("\033[31;1mCD error!\033[0m\n");
 
     return;
+}
+
+int transfer_funcall(int sockfd, char *buf){
+
+    char buffer[1024] = {0};
+
+    strcpy(buffer, buf);
+    char *key;
+    if (strstr(buffer, " ")) {
+        key = strtok(buffer, " ");
+        if (!strcmp(key, "PUT")) {
+            return 1;}
+        else if (!strcmp(key, "GET")) {
+            return 2;}
+    }
+
+    return 0;
 }
 
 
@@ -177,7 +194,7 @@ void query_handler(int sockfd){
 
 
     if(str[0] == '!'){
-        query = funcall(str);
+        query = local_funcall(str);
         switch (query){
             case 1: //PWD client command
                 getpwd();
@@ -188,15 +205,23 @@ void query_handler(int sockfd){
             case 3: // LS client command
                 getls();
                 return;
-            case 5: // GET command
+            default:
+                send(sockfd, str, strlen(str), 0);
+        }
+    }
+    else {
+        query = transfer_funcall(sockfd, str);
+        switch (query){
+            case 1: //PUT client command
+                printf("inside PUT cmd processing\n");
                 return;
-            case 6: // PUT command
+            case 2: // GET client command
+                printf("inside GET cmd processing\n");
                 return;
             default:
                 send(sockfd, str, strlen(str), 0);
         }
     }
-    send(sockfd, str, strlen(str), 0);
 
     if (!strcmp(str, "QUIT\n"))
         exit(0);
@@ -205,7 +230,6 @@ void query_handler(int sockfd){
     printf("%s", str);
     return;
 }
-
 
 
 void sigintHandler(int sig_num){

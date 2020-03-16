@@ -201,7 +201,7 @@ void getusers(struct logindb *logins)
     FILE *db = fopen("db.txt", "r");
     if (!db)
     {
-        printf("User Login Data not found!\n");
+        printf("\033[31;1mUser Login Data not found!!\033[0m\n");
     }
 
     char str[50];
@@ -216,14 +216,14 @@ void getusers(struct logindb *logins)
         entry = strtok(str, "\n");
         //printf("%s", entry);
         if (!entry)
-            printf("Password file corrupted\n");
+            printf("\033[31;1mPassword file corrupted\033[0m\n");
         strcpy(logins[i].usrn, entry);
 
         fgets(str, 50, db);
         entry = strtok(str, "\n");
         //printf("%s", entry);
         if (!entry)
-            printf("Password file corrupted\n");
+            printf("\033[31;1mPassword file corrupted\033[0m\n");
         strcpy(logins[i].pass, entry);
 
         i++;
@@ -251,7 +251,7 @@ void getpwd(int client_socket)
     }
     else
     {
-        strcpy(buffer, "[-] getcwd() error\n");
+        strcpy(buffer, "\033[31;1mgetcwd() error\033[0m\n");
         send(client_socket, buffer, strlen(buffer), 0);
     }
 
@@ -278,7 +278,7 @@ void getls(int client_socket)
     }
     else
     {
-        sprintf(buffer, "[-] permission or directory error!\n");
+        sprintf(buffer, "\033[31;1mpermission or directory error!\033[0m\n");
     }
 
     send(client_socket, buffer, strlen(buffer), 0);
@@ -300,7 +300,7 @@ void changedir(int client_socket, char *buffer)
     if (chdir(buf) == 0)
         getpwd(client_socket);
     else
-        echo(client_socket, "CD error!\n");
+        echo(client_socket, "\033[31;1mCD error!\033[0m\n");
 
     return;
 }
@@ -318,6 +318,16 @@ int funcall(char *buf)
         {
             printf("CD command received!\n");
             return 2;
+        }
+        else if (!strcmp(key, "GET"))
+        {
+            printf("GET command received!\n");
+            return 5;
+        }
+        else if (!strcmp(key, "PUT"))
+        {
+            printf("PUT command received!\n");
+            return 6;
         }
     }
     else if (buffer[0] != '\n')
@@ -419,8 +429,10 @@ int main()
                             FD_CLR(i, &sockets);
                             break;
                         case 5: // GET command
+                            echo(i, "\033[1;GET command!\033[0m\n");
                             break;
                         case 6: // PUT command
+                            echo(i, "\033[1;31mPUT command!\033[0m\n");
                             break;
                         default:
                             echo(i, "\033[1;31mInvalid FTP command!\033[0m\n");
