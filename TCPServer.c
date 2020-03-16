@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #define PORT 9999
+#define DTPORT 8888
 #define SA struct sockaddr
 #define USERCOUNT 5
 
@@ -40,10 +41,15 @@ int server_setup(int port, int usercount){
 
     bzero(&servaddr, sizeof(servaddr));
 
+    int enable = 1; // clear the previous connections
+    if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
+        printf("setsockopt(SO_REUSEADDR) failed\n");
+
+
     // assign IP, PORT
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    servaddr.sin_port = htons(PORT);
+    servaddr.sin_port = htons(port);
 
     if ((bind(server_socket, (SA *)&servaddr, sizeof(servaddr))) != 0)
     {
@@ -54,7 +60,7 @@ int server_setup(int port, int usercount){
         printf("Socket successfully binded..\n");
 
     // Now server is ready to listen and verify up to 5 connections
-    if ((listen(server_socket, USERCOUNT)) < 0)
+    if ((listen(server_socket, usercount)) < 0)
     {
         printf("Listen failed...\n");
         exit(EXIT_FAILURE);
@@ -90,6 +96,7 @@ int user_login(int client_socket, struct logindb *logins, fd_set *sockets)
 
     //handle login
     read(client_socket, buffer, 1024);
+
 
     if(!strcmp(buffer, "QUIT") || !strcmp(buffer, "QUIT\n")){ // drop the client on quit
         printf("dropping the client %d\n", client_socket);
@@ -355,6 +362,50 @@ int funcall(char *buf)
 
 
 
+void doput(int client, char *buffer){
+
+    char *key;
+    char buf[64]; // store the path
+    for (int i = 4; i < 64; i++)
+        buf[i - 4] = buffer[i];
+
+    key = strtok(buf, "\n"); // name of the file to put
+
+    //printf("filename: %s\n", key);
+
+
+    int new_sockfd = server_setup(DTPORT, 5);
+
+
+    char str[64] = {0};
+    strcpy(str, "DATATRANSFER\n");
+    send(client, str, strlen(str), 0);
+
+    printf("Sent data to client!\n");
+    // tell client that socket created
+
+
+    int data = accept_client(new_sockfd);
+
+    char ch[64] = {0};
+
+    read(data, ch, 64);
+
+    printf("%s", ch);
+
+
+
+
+
+    close(new_sockfd);
+    close(data);
+
+
+}
+
+
+
+
 int main()
 {
     struct logindb logins[USERCOUNT]; //reading <up to USERCOUNT> users into the login-database
@@ -432,7 +483,8 @@ int main()
                             echo(i, "\033[1;GET command!\033[0m\n");
                             break;
                         case 6: // PUT command
-                            echo(i, "\033[1;31mPUT command!\033[0m\n");
+                            echo(i, "\033[1;31mPUT command initialized!\033[0m\n");
+                            doput(i, buffer);
                             break;
                         default:
                             echo(i, "\033[1;31mInvalid FTP command!\033[0m\n");

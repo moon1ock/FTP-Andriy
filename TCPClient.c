@@ -14,10 +14,11 @@
 #include <limits.h>
 #define MAX 80
 #define PORT 9999
+#define DTPORT 8888 // port for a separate TCP connection for data transfer
 #define SA struct sockaddr
 int sig_handl_sock;
 
-int setup_connection(int sockfd)
+int setup_connection(int sockfd, int port)
 {
 
     struct sockaddr_in servaddr;
@@ -33,10 +34,14 @@ int setup_connection(int sockfd)
         printf("Socket successfully created..\n");
     bzero(&servaddr, sizeof(servaddr));
 
+
+    int enable = 1; // clear the previous connections
+    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
+        printf("setsockopt(SO_REUSEADDR) failed\n");
     // assign IP, PORT
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-    servaddr.sin_port = htons(PORT);
+    servaddr.sin_port = htons(port);
 
     // connect the client socket to server socket
     if (connect(sockfd, (SA *)&servaddr, sizeof(servaddr)) != 0)
@@ -192,12 +197,10 @@ void evoke_put(int sockfd, char *buf){
     for(int i = 4; i<sizeof(buffer); i++){
         buffer[i-4] = buf[i];
     }
-    char *key = strtok(buffer, "\n");
+    char *key = strtok(buffer, "\n"); // filename
     if (key == NULL || strstr(key, " ") || strstr(key, "\t")){
         printf("Incorrect filename!\n");
         return;}
-
-    printf("%s\n", key);
 
     FILE *fp;
     long int size=0;
@@ -210,9 +213,62 @@ void evoke_put(int sockfd, char *buf){
     }
 
 
+
     // create a char array 1024 in size (we can use buffer since we don't need it anymore
     // iterate over the file, until EOF, if 1024 then send and restart the counter
     // have tp figure out the connection stuff
+
+
+
+    // creating a new TCP connection with a server!
+
+    // ********************************* //
+    send(sockfd, buf, strlen(buf), 0);
+
+
+    memset(buffer,0,sizeof(buffer));
+    read(sockfd, buffer, 1024);
+
+    printf("%s", buffer);// PUT CMD init
+
+    char ch[64] = {0};
+    int new_sockfd;
+
+    read(sockfd, ch, 64);
+    char *k;
+    k = strtok(ch, "\n");
+    if(!strcmp(k, "DATATRANSFER")){
+        new_sockfd = setup_connection(new_sockfd, DTPORT);}
+    else{printf("weird error\n"); return;}
+
+
+    send(new_sockfd, "CONNECTION WITHIN CONNECTION\n", strlen("CONNECTION WITHIN CONNECTION\n"), 0);
+    printf("SENT!!!\n");
+    memset(ch,0,sizeof(ch));
+
+    //read(new_sockfd, ch, 1);
+    close(new_sockfd);
+    //printf("Closing the TCP connection \033[5m...\033[0m\n");
+    //usleep(3000000); // need this timer to close socket properly
+
+    // ********************************** //
+
+    // clear the buffer for file transfer
+    memset(buffer,0,sizeof(buffer)); // i decided to send 1024 bytes at once, and use the previously created buffer to save memory
+
+
+
+
+    //send(new_c, "QUIT\n", strlen("QUIT\n"), 0);
+
+    // char ch;
+    // int i = 0;
+    // while( ( ch = fgetc(fp) ) != EOF ){
+    //     buffer[i++] = ch;
+    //     if(i == 1025){
+    //         //deal with it!
+    //     }
+    //     }
 
 
 }
@@ -279,7 +335,7 @@ void sigintHandler(int sig_num){
 int main(){
     int sockfd, authorized = 0;
 
-    sockfd = setup_connection(sockfd);
+    sockfd = setup_connection(sockfd, PORT);
     sig_handl_sock = sockfd;
     signal(SIGINT, sigintHandler); // catch CTRL+C
 
