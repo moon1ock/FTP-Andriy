@@ -285,6 +285,13 @@ void evoke_put(int sockfd, char *buf){
 
 
 
+    // //read(new_sockfd, ch, 1);
+    // close(new_sockfd);
+    // //printf("Closing the TCP connection \033[5m...\033[0m\n");
+    // //usleep(3000000); // need this timer to close socket properly
+
+
+
 
 
 
