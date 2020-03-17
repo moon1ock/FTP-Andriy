@@ -12,7 +12,7 @@
 *.exe
 *.o
 *.so
-*.txt
+# *.txt
 *.xml
 a.out
 

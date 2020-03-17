@@ -1,0 +1,8 @@
+a.txt
+b.txt
+c.txt
+d.txt
+
+# you may find them in ClientFolder and ServerFolders
+   a was just the most basic test, to check whether it even functions in the first place
+   the rest were more intricate, but my FTP program handled them perfectly.
