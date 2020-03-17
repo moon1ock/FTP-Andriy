@@ -1,7 +1,6 @@
 # This is a simple tutorial for the FTP program that I created
 
-#### the program works best if you restart your terminal, so please make sure to do it
-#### before running the makefile
+#### the program works best if you restart your terminal, so please make sure to do it before running the makefile
 
 ## Login
 
@@ -40,9 +39,7 @@
 
 ---------------
 
-### On aggregate, I have to admit that I did overestimate myself at first, and the lab turned out to
-### be more challanging than I expected, but I did really enjoy it, and can surely say that I learned
-### a lot. Please contact me if you have any questions about the functions / programs.
+### On aggregate, I have to admit that I did overestimate myself at first, and the lab turned out to be more challanging than I expected, but I did really enjoy it, and can surely say that I learned a lot. Please contact me if you have any questions about the functions / programs.
 
 
 
