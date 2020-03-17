@@ -18,6 +18,7 @@
 #define SA struct sockaddr
 int sig_handl_sock;
 
+
 int setup_connection(int sockfd, int port)
 {
 
@@ -242,7 +243,7 @@ void evoke_put(int sockfd, char *buf){
     // creating a new TCP connection with a server!
 
     // ********************************* //
-    send(sockfd, buf, strlen(buf), 0);
+    send(sockfd, buf, strlen(buf), 0); // identifying a put command for the server
 
 
     memset(buffer,0,sizeof(buffer));
@@ -299,7 +300,9 @@ void evoke_put(int sockfd, char *buf){
     }
     buffer[i++] = '\0'; // null character to terminate string
     send(new_sockfd, buffer, strlen(buffer), 0); // send the last batch
-    printf("sending finished\n");
+    printf("\033[32;1m");
+    printf("File sent successfully!\033[0m\n");
+
 
     memset(ch,0,sizeof(ch));
     read(new_sockfd, ch, 1024);
@@ -307,8 +310,114 @@ void evoke_put(int sockfd, char *buf){
 
     // ********************************** //
 
-    // clear the buffer for file transfer
-    memset(buffer,0,sizeof(buffer)); // i decided to send 1024 bytes at once, and use the previously created buffer to save memory
+    close(new_sockfd);
+    fclose(fp);
+
+
+}
+
+
+
+void evoke_get(int sockfd, char *buf){
+
+    // check if a file with such a name already exists in the directory first
+    char buffer[1024] = {0}; // create a copy bc strtok is destructive
+    char name[1024] = {0};
+    for(int i = 4; i<sizeof(buffer); i++){
+        buffer[i-4] = buf[i];
+    }
+    char *key = strtok(buffer, "\n"); // filename
+    strcpy(name, key);
+    if (key == NULL || strstr(key, " ") || strstr(key, "\t")){
+        printf("Incorrect filename!\n");
+        return;}
+
+    FILE *fp;
+
+    fp=fopen(name,"r");
+
+    if(fp != NULL){
+        printf("File with such name already exists in this directory! Cannot receive!\n");
+        fclose(fp);
+        return;
+    }
+    fclose(fp);
+
+
+    // send the GET command to the serever to start the processing!!
+
+    send(sockfd, buf, strlen(buf), 0);
+
+
+    // clear out the buffer for receiving the file
+
+    memset(buffer,0,sizeof(buffer));
+    read(sockfd, buffer, 1024);
+    if (!strcmp(buffer, "DATA\n")){
+        printf("Setting up the connection...\n");}
+
+    else if(!strcmp(buffer, "404 File does not exist!\n")){
+        printf("\033[1;31m404 File does not exist!\033[0m\n\n");
+        return;
+    }
+
+
+
+    char ch[1024] = {0};
+    printf("Setting up a new TCP connection...\n");
+
+
+    int new_sockfd;
+    new_sockfd = setup_connection(new_sockfd, DTPORT);
+
+    send(new_sockfd, "new TCP connection setup!", strlen("new TCP connection setup!"), 0);
+    memset(ch,0,sizeof(ch));
+    read(new_sockfd, ch, 1024); // confirmation of TCP setup
+    printf("%s\n", ch);
+
+    /* Receive the file */
+    fp=fopen(name,"w");
+
+
+    memset(ch,0,sizeof(ch));
+    read(new_sockfd, ch, 1024); // read the first batch
+    int cnt =1;
+    while (strcmp(ch, "EOF\n")){
+        fprintf(fp, "%s", ch); // append the first batch to the file
+        send(new_sockfd, "1", strlen("1"), 0); // send confirmation
+        memset(ch,0,sizeof(ch)); // clear buffer
+        read(new_sockfd, ch, 1024); // read again
+    }
+    printf("\033[32;1m");
+    printf("File received successfully!\033[0m\n");
+
+    // transfer the file
+    // memset(buffer,0,sizeof(buffer));
+    // int cc;
+    // int i = 0;
+    // while( ( cc = fgetc(fp) ) != EOF ){
+    //     buffer[i++] = cc;
+    //     if(i == 1023){ // send the 1024 processed bits to the server, reset the cnt and clear the buffer
+    //         buffer[i] = '\0';
+    //         send(new_sockfd, buffer, strlen(buffer), 0);
+    //         memset(ch,0,sizeof(ch));
+    //         read(new_sockfd, ch, 1024);
+    //         //printf("ch: %s\n", ch);
+    //         i = 0;
+    //         memset(buffer,0,sizeof(buffer));
+    //     }
+    // }
+    // buffer[i++] = '\0'; // null character to terminate string
+    // send(new_sockfd, buffer, strlen(buffer), 0); // send the last batch
+    // printf("\033[32;1m");
+    // printf("File sent successfully!\033[0m\n");
+
+
+    // memset(ch,0,sizeof(ch));
+    // read(new_sockfd, ch, 1024);
+    // send(new_sockfd, "EOF\n", strlen("EOF\n"), 0); // indicate the end of file here
+
+    // ********************************** //
 
 
 
@@ -317,6 +426,9 @@ void evoke_put(int sockfd, char *buf){
 
 
 }
+
+
+
 
 
 
@@ -347,19 +459,18 @@ void query_handler(int sockfd){
         query = transfer_funcall(sockfd, str);
         switch (query){
             case 1: //PUT client command
-                printf("inside PUT cmd processing\n");
                 evoke_put(sockfd, str);
                 return;
             case 2: // GET client command
-                printf("inside GET cmd processing\n");
+                evoke_get(sockfd, str);
                 return;
             default:
                 send(sockfd, str, strlen(str), 0);
         }
     }
 
-    if (!strcmp(str, "QUIT\n"))
-        exit(0);
+    if (!strcmp(str, "QUIT\n")){
+        exit(0);}
     memset(str,0,sizeof(str));
     read(sockfd, str, 1024);
     printf("%s", str);

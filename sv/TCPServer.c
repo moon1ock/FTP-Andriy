@@ -448,6 +448,92 @@ void doput(int client, char *buffer){
 
 }
 
+void doget(int client, char *buf){
+
+    char buffer[1024] = {0}; // create a copy bc strtok is destructive
+    char name[1024] = {0};
+    for(int i = 4; i<sizeof(buffer); i++){
+        buffer[i-4] = buf[i];
+    }
+    char *key = strtok(buffer, "\n"); // filename
+    strcpy(name, key);
+
+    FILE *fp;
+    fp=fopen(name,"r");
+
+    if(fp == NULL){
+        send(client, "404 File does not exist!\n", strlen("404 File does not exist!\n"), 0);
+        return;
+    }
+    ////////////
+
+    int new_sockfd = server_setup(DTPORT, 5);
+
+
+    char str[8] = {0};
+    strcpy(str, "DATA\n");
+    send(client, str, strlen(str), 0);
+
+    printf("Sent DATA KEY to client!\n"); // tell client that socket created cmnt later
+
+
+    int data = accept_client(new_sockfd);
+
+    char ch[1024] = {0};
+
+    read(data, ch, 1024); // new tcp connection setup
+
+    printf("%s\n", ch);
+
+    send(data, "TCP connection for file transfer established!", strlen("TCP connection for file transfer established!"), 0);
+
+    // **********SEND THE FILE**********//
+
+
+    // memset(ch,0,sizeof(ch));
+    // read(data, ch, 1024); // read the first batch
+    // int cnt =1;
+    // while (strcmp(ch, "EOF\n")){
+    //     fprintf(fp, "%s", ch); // append the first batch to the file
+    //     send(data, "1", strlen("1"), 0); // send confirmation
+    //     memset(ch,0,sizeof(ch)); // clear buffer
+    //     read(data, ch, 1024); // read again
+    // }
+
+
+
+    memset(buffer,0,sizeof(buffer));
+    int cc;
+    int i = 0;
+    while( ( cc = fgetc(fp) ) != EOF ){
+        buffer[i++] = cc;
+        if(i == 1023){ // send the 1024 processed bits to the server, reset the cnt and clear the buffer
+            buffer[i] = '\0';
+            send(data, buffer, strlen(buffer), 0);
+            memset(ch,0,sizeof(ch));
+            read(data, ch, 1024);
+            //printf("ch: %s\n", ch);
+            i = 0;
+            memset(buffer,0,sizeof(buffer));
+        }
+    }
+    buffer[i++] = '\0'; // null character to terminate string
+    send(data, buffer, strlen(buffer), 0); // send the last batch
+    printf("\033[32;1m");
+    printf("File sent successfully!\033[0m\n");
+
+
+    memset(ch,0,sizeof(ch));
+    read(data, ch, 1024);
+    send(data, "EOF\n", strlen("EOF\n"), 0); // indicate the end of file here
+
+
+    fclose(fp);
+    close(data);
+    close(new_sockfd);
+
+}
+
 
 
 int main()
@@ -522,9 +608,11 @@ int main()
                         case 4: // QUIT command
                             printf("dropping the client %d\n", i);
                             FD_CLR(i, &sockets);
+                            close(i);
                             break;
                         case 5: // GET command
-                            echo(i, "\033[1;GET command!\033[0m\n");
+                            //echo(i, "\033[1;GET command initialized!\033[0m\n");
+                            doget(i, buffer);
                             break;
                         case 6: // PUT command
                             echo(i, "\033[1;31mPUT command initialized!\033[0m\n");
