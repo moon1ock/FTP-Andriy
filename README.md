@@ -1,5 +1,5 @@
-# FTP-Andriy
-animated umbrella
+### FTP-Andriy
 
+This is a C implementation of an FTP client - server schema, by Andrii Lunin
 
-ftp implementation using the tcp protocol
+For usage reference, please read the tutorial.md file
